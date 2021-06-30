@@ -21,7 +21,7 @@ DEPS = $(shell find ./include -name '*.h')
 
 OVMF = /usr/share/ovmf/OVMF.fd
 
-.PHONY: all clean
+.PHONY: all clean run
 
 %.o: %.c $(DEPS)
 	@echo "[+] Building $<"
