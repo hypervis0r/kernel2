@@ -82,7 +82,7 @@ EFI_STATUS KeBootEnableGOP(EFI_SYSTEM_TABLE *SystemTable, P_KE_GOP_INFO lpGopInf
     */
     for (int i = 0; i < numModes; i++) {
         status = gop->QueryMode(gop, i, &SizeOfInfo, &info);
-        KeBootPrintDebug(SystemTable, L"Found mode lol\r\n");
+        //KeBootPrintDebug(SystemTable, L"Found mode lol\r\n");
         /*Print(L"mode %03d width %d height %d format %x%s",
             i,
             info->HorizontalResolution,

@@ -46,4 +46,4 @@ clean:
 	rm -rf $(OBJS) kernel2.efi kernel2.img
 
 run: all
-	qemu-system-x86_64 -cpu qemu64 -bios $(OVMF) -net none kernel2.img
+	qemu-system-x86_64 -serial stdio -cpu qemu64 -bios $(OVMF) -net none kernel2.img
