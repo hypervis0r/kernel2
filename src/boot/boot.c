@@ -14,14 +14,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     KE_RECT rect = { 0 };
     KE_GOP_INFO gopInfo = { 0 };
 
+    KeBootGetSerialProtocol(SystemTable, &lpSerialProtocol);
+    KeBootSerialWrite(lpSerialProtocol, L"[+] Serial Hello World\n", 48);
+    
     /*
         Disable watchdog timer
     */
     SystemTable->BootServices->SetWatchdogTimer(0, 0, 0, NULL);
 
-    KeBootGetSerialProtocol(SystemTable, &lpSerialProtocol);
-
-    KeBootSerialWrite(lpSerialProtocol, L"[+] Serial Hello World\n", 48);
 
     /*
         Enable the Graphics Output Protocol and set the video mode.
@@ -30,6 +30,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     KeBootEnableGOP(SystemTable, &gopInfo);
 
     KeBootClearScreen(&gopInfo, 0);
+
+    KeBootPrintDebug(SystemTable, L"Fuck you");
 
     /*
         Wait for keystroke
