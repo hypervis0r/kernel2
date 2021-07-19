@@ -1,10 +1,7 @@
-GNUEFI := $(ROOTDIR)/gnuefi
-
 LIBDIR := -L$(ROOTDIR)/lib/
-LIBDIR += -L$(GNUEFI)
 
-LIBS := -lgnuefi
-LIBS += -lefi
+#LIBS := -lgnuefi
+LIBS := -lefi
 
 INCLUDEFLAGS := -I$(ROOTDIR)/lib/include/
 INCLUDEFLAGS += -I$(ROOTDIR)/include/
