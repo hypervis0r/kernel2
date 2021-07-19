@@ -1,3 +1,5 @@
+#pragma once
+
 #include <efi.h>
 
 #include "boot/boot.h"
@@ -15,89 +17,89 @@ typedef struct KE_PE_IMAGE
 
 typedef struct _IMAGE_DOS_HEADER
 {
-     WORD e_magic;
-     WORD e_cblp;
-     WORD e_cp;
-     WORD e_crlc;
-     WORD e_cparhdr;
-     WORD e_minalloc;
-     WORD e_maxalloc;
-     WORD e_ss;
-     WORD e_sp;
-     WORD e_csum;
-     WORD e_ip;
-     WORD e_cs;
-     WORD e_lfarlc;
-     WORD e_ovno;
-     WORD e_res[4];
-     WORD e_oemid;
-     WORD e_oeminfo;
-     WORD e_res2[10];
-     LONG e_lfanew;
+     UINT16 e_magic;
+     UINT16 e_cblp;
+     UINT16 e_cp;
+     UINT16 e_crlc;
+     UINT16 e_cparhdr;
+     UINT16 e_minalloc;
+     UINT16 e_maxalloc;
+     UINT16 e_ss;
+     UINT16 e_sp;
+     UINT16 e_csum;
+     UINT16 e_ip;
+     UINT16 e_cs;
+     UINT16 e_lfarlc;
+     UINT16 e_ovno;
+     UINT16 e_res[4];
+     UINT16 e_oemid;
+     UINT16 e_oeminfo;
+     UINT16 e_res2[10];
+     UINT32 e_lfanew;
 } IMAGE_DOS_HEADER, *PIMAGE_DOS_HEADER;
 
 typedef struct _IMAGE_FILE_HEADER {
-  WORD  Machine;
-  WORD  NumberOfSections;
-  DWORD TimeDateStamp;
-  DWORD PointerToSymbolTable;
-  DWORD NumberOfSymbols;
-  WORD  SizeOfOptionalHeader;
-  WORD  Characteristics;
+  UINT16  Machine;
+  UINT16  NumberOfSections;
+  UINT32 TimeDateStamp;
+  UINT32 PointerToSymbolTable;
+  UINT32 NumberOfSymbols;
+  UINT16  SizeOfOptionalHeader;
+  UINT16  Characteristics;
 } IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER;
 
 typedef struct _IMAGE_OPTIONAL_HEADER {
-  WORD                 Magic;
-  BYTE                 MajorLinkerVersion;
-  BYTE                 MinorLinkerVersion;
-  DWORD                SizeOfCode;
-  DWORD                SizeOfInitializedData;
-  DWORD                SizeOfUninitializedData;
-  DWORD                AddressOfEntryPoint;
-  DWORD                BaseOfCode;
-  ULONGLONG            ImageBase;
-  DWORD                SectionAlignment;
-  DWORD                FileAlignment;
-  WORD                 MajorOperatingSystemVersion;
-  WORD                 MinorOperatingSystemVersion;
-  WORD                 MajorImageVersion;
-  WORD                 MinorImageVersion;
-  WORD                 MajorSubsystemVersion;
-  WORD                 MinorSubsystemVersion;
-  DWORD                Win32VersionValue;
-  DWORD                SizeOfImage;
-  DWORD                SizeOfHeaders;
-  DWORD                CheckSum;
-  WORD                 Subsystem;
-  WORD                 DllCharacteristics;
-  ULONGLONG            SizeOfStackReserve;
-  ULONGLONG            SizeOfStackCommit;
-  ULONGLONG            SizeOfHeapReserve;
-  ULONGLONG            SizeOfHeapCommit;
-  DWORD                LoaderFlags;
-  DWORD                NumberOfRvaAndSizes;
+  UINT16                 Magic;
+  CHAR8                 MajorLinkerVersion;
+  CHAR8                 MinorLinkerVersion;
+  UINT32                SizeOfCode;
+  UINT32                SizeOfInitializedData;
+  UINT32                SizeOfUninitializedData;
+  UINT32                AddressOfEntryPoint;
+  UINT32                BaseOfCode;
+  UINT64            ImageBase;
+  UINT32                SectionAlignment;
+  UINT32                FileAlignment;
+  UINT16                 MajorOperatingSystemVersion;
+  UINT16                 MinorOperatingSystemVersion;
+  UINT16                 MajorImageVersion;
+  UINT16                 MinorImageVersion;
+  UINT16                 MajorSubsystemVersion;
+  UINT16                 MinorSubsystemVersion;
+  UINT32                Win32VersionValue;
+  UINT32                SizeOfImage;
+  UINT32                SizeOfHeaders;
+  UINT32                CheckSum;
+  UINT16                 Subsystem;
+  UINT16                 DllCharacteristics;
+  UINT64            SizeOfStackReserve;
+  UINT64            SizeOfStackCommit;
+  UINT64            SizeOfHeapReserve;
+  UINT64            SizeOfHeapCommit;
+  UINT32                LoaderFlags;
+  UINT32                NumberOfRvaAndSizes;
 } IMAGE_OPTIONAL_HEADER, *PIMAGE_OPTIONAL_HEADER;
 
 typedef struct _IMAGE_PE_HEADERS {
-  DWORD                   Signature;
+  UINT32                   Signature;
   IMAGE_FILE_HEADER       FileHeader;
   IMAGE_OPTIONAL_HEADER   OptionalHeader;
 } IMAGE_PE_HEADERS, *PIMAGE_PE_HEADERS;
 
 typedef struct _IMAGE_SECTION_HEADER {
-  BYTE  Name[8];
+  CHAR8  Name[8];
   union {
-    DWORD PhysicalAddress;
-    DWORD VirtualSize;
+    UINT32 PhysicalAddress;
+    UINT32 VirtualSize;
   } Misc;
-  DWORD VirtualAddress;
-  DWORD SizeOfRawData;
-  DWORD PointerToRawData;
-  DWORD PointerToRelocations;
-  DWORD PointerToLinenumbers;
-  WORD  NumberOfRelocations;
-  WORD  NumberOfLinenumbers;
-  DWORD Characteristics;
+  UINT32 VirtualAddress;
+  UINT32 SizeOfRawData;
+  UINT32 PointerToRawData;
+  UINT32 PointerToRelocations;
+  UINT32 PointerToLinenumbers;
+  UINT16  NumberOfRelocations;
+  UINT16  NumberOfLinenumbers;
+  UINT32 Characteristics;
 } IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER;
 
 EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMAGE Image);

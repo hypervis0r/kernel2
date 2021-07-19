@@ -17,7 +17,7 @@ kernel2.img: boot.efi kernel.exe
 	mmd -i $@ ::/EFI
 	mmd -i $@ ::/EFI/BOOT
 	mcopy -i $@ $< ::/EFI/BOOT/BOOTX64.efi
-	mcopy -i $@ $> ::/KERNEL.EXE
+	mcopy -i $@ kernel.exe ::/KERNEL.EXE
 	@echo "[+] Built kernel2"
 
 all: clean kernel2.img

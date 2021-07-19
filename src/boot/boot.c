@@ -1,52 +1,105 @@
 #include "boot/boot.h"
 
-EFI_STATUS KeBootLoadFile(EFI_SYSTEM_TABLE *SystemTable, WCHAR* FilePath, VOID** Buffer, UINTN *BufferSize)
+EFI_STATUS KeBootLoadFile(EFI_SYSTEM_TABLE *SystemTable, EFI_HANDLE Image, WCHAR* FilePath, VOID** Buffer, UINTN *BufferSize)
 {
     EFI_STATUS status = 0;
     EFI_GUID SimpleFileSystemGUID = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
     EFI_GUID FileInfoGUID =         EFI_FILE_INFO_ID;
+    EFI_GUID FilesystemInfoGUID =   EFI_FILE_SYSTEM_INFO_ID;
+    EFI_LOADED_IMAGE *loaded_image = NULL;                  /* image interface */
+    EFI_GUID lipGuid =              EFI_LOADED_IMAGE_PROTOCOL_GUID;      /* image interface GUID */
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* lpSfs = NULL;
     EFI_FILE_PROTOCOL* hRootFs = NULL;
     EFI_FILE_PROTOCOL* hFile = NULL;
-    EFI_FILE_INFO fileInfo = { 0 };
+    EFI_FILE_INFO *fileInfo = NULL;
+    EFI_FILE_SYSTEM_INFO filesystemInfo = { 0 };
+    UINTN filesystemInfoSize = sizeof(filesystemInfo);
     UINTN fileInfoSize = sizeof(fileInfo);
+    VOID* fileBuffer = NULL;
 
-    if (!SystemTable || !FilePath || !Buffer)
+    if (!SystemTable || !FilePath || !Buffer || !BufferSize)
         return -1;
 
-    status = SystemTable->BootServices->LocateProtocol(&SimpleFileSystemGUID, NULL, &lpSfs);
+    // TODO: Definintly not this
+    SystemTable->BootServices->AllocatePool(EfiLoaderData, 100, &fileInfo);
+    fileInfoSize = 100;
+
+    status = SystemTable->BootServices->HandleProtocol(Image, &lipGuid, &loaded_image);
     if(EFI_ERROR(status))
     {
-        KeBootPrintDebug(SystemTable, L"Unable to locate SFS");
+        KeBootPrintDebug(SystemTable, L"[-] Unable to locate SFS\n");
+        return -1;
+    }
+
+    status = SystemTable->BootServices->HandleProtocol(loaded_image->DeviceHandle, &SimpleFileSystemGUID, &lpSfs);
+    if(EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Unable to locate SFS\n");
         return -1;
     }
 
     status = lpSfs->OpenVolume(lpSfs, &hRootFs);
     if (EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Failed to open volume\n");
         return -1;
+    }
+
+    status = hRootFs->GetInfo(hRootFs, &FilesystemInfoGUID, &filesystemInfoSize, &filesystemInfo);
+    if (EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Failed to get filesystem info\n");
+        return -1;
+    }
+
+    KeBootPrintDebug(SystemTable, filesystemInfo.VolumeLabel);
 
     status = hRootFs->Open(hRootFs, &hFile, FilePath, EFI_FILE_MODE_READ, NULL);
     if (EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Couldn't find file specified\n");
         return -1;
+    }
     
     status = hFile->GetInfo(hFile, &FileInfoGUID, &fileInfoSize, &fileInfo);
     if (EFI_ERROR(status))
+    {
+        //KeBootPrintDebug(SystemTable, L"[-] Couldn't get file info\n");
+        //return -1;
+    }
+
+    // TODO: Dear god
+    SystemTable->BootServices->AllocatePool(EfiLoaderData, fileInfoSize, &fileInfo);
+
+    status = hFile->GetInfo(hFile, &FileInfoGUID, &fileInfoSize, &fileInfo);
+    if (EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Couldn't get file info\n");
         return -1;
+    }
+
+    //KeBootPrintDebug(SystemTable, fileInfo->FileName);
 
     UINTN pagesToAllocate = EFI_SIZE_TO_PAGES(fileInfo->FileSize);
-    status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, 
-                                                        EfiLoaderData, 
-                                                        pagesToAllocate,
-                                                        *Buffer);
+    status = SystemTable->BootServices->AllocatePool(EfiLoaderData, 
+                                                        fileInfo->FileSize,
+                                                        &fileBuffer);
     if (EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Couldn't allocate pages\n");
         return -1;
+    }
 
-    UINTN bytesAllocated = EFI_PAGES_TO_SIZE(pagesToAllocate);
-    status = hFile->Read(hFile, &bytesAllocated, *Buffer);
+    UINTN bytesAllocated = fileInfo->FileSize; //EFI_PAGES_TO_SIZE(pagesToAllocate);
+    status = hFile->Read(hFile, &bytesAllocated, fileBuffer);
     if (EFI_ERROR(status))
+    {
+        KeBootPrintDebug(SystemTable, L"[-] Couldn't read file\n");
         return -1;
+    }
 
     *BufferSize = bytesAllocated;
+    *Buffer = fileBuffer;
 
     return EFI_SUCCESS;
 }
@@ -97,18 +150,18 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     */
     //while ((Status = SystemTable->ConIn->ReadKeyStroke(SystemTable->ConIn, &Key)) == EFI_NOT_READY) ;
 
-    status = KeBootLoadFile(SystemTable, L"KERNEL.EXE", &KernelBuffer, &KernelBufferLength);
-    if (EFI_ERROR(status))
+    Status = KeBootLoadFile(SystemTable, ImageHandle, L"\\KERNEL.EXE", &KernelBuffer, &KernelBufferLength);
+    if (EFI_ERROR(Status))
     {
-        KeBootSerialWrite(lpSerialProtocol, L"[-] Failed to load KERNEL.EXE\n", 31);
+        KeBootPrintDebug(SystemTable, L"[-] Failed to load KERNEL.EXE\n");
         return -1;
     }
 
     P_KE_PE_IMAGE kernelImage = NULL;
-    status = KeBootLoadPe(SystemTable, KernelBuffer, kernelImage);
-    if (EFI_ERROR(status))
+    Status = KeBootLoadPe(SystemTable, KernelBuffer, kernelImage);
+    if (EFI_ERROR(Status))
     {
-        KeBootSerialWrite(lpSerialProtocol, L"[-] Failed to load PE\n", 23);
+        KeBootPrintDebug(SystemTable, L"[-] Failed to load PE\n");
         return -1;
     }
 
@@ -142,7 +195,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     Status = SystemTable->BootServices->ExitBootServices(ImageHandle, MemoryMap);
 
     BootloaderInfo.lpMemoryMap = MemoryMap;
-    BootloaderInfo.lpGopInfo = lpGopInfo;
+    BootloaderInfo.lpGopInfo = &gopInfo;
 
     // TODO: Jump to kernel kek
     KeBootCallPe(kernelImage, &BootloaderInfo);

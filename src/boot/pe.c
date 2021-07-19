@@ -38,17 +38,17 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
         We only support AMD64 PE files
         DEATH TO 32 BIT.
     */
-    if (lpPeHeaders->OptionalHeader->Magic != OPTIONAL_HEADER_AMD64_MAGIC)
+    if (lpPeHeaders->OptionalHeader.Magic != OPTIONAL_HEADER_AMD64_MAGIC)
         return -1;
 
     /*
         Iterate over every PE section and load it into virtual memory
     */
     lpSectionHeader = (PIMAGE_SECTION_HEADER)(lpPeHeaders + 
-                                                sizeof(DWORD) + 
+                                                sizeof(UINT32) + 
                                                 sizeof(IMAGE_FILE_HEADER) + 
                                                 lpPeHeaders->FileHeader.SizeOfOptionalHeader);
-    for (WORD i = 0; i < lpPeHeaders->FileHeader.NumberOfSections; i++) 
+    for (UINT32 i = 0; i < lpPeHeaders->FileHeader.NumberOfSections; i++) 
     {
         /*if (lpSectionHeader->Characteristics & IMAGE_SCN_CNT_CODE)
             allocateType = EfiLoaderCode;
@@ -66,9 +66,9 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
     
     // TODO: Fix relocations (lets hope this is a later todo and not a soon todo)
     
-    peImage.EntryPoint = lpPeHeaders->OptionalHeader->AddressOfEntryPoint;
-    peImage.ImageBase = lpPeHeaders->OptionalHeader->ImageBase;
-    peImage.ImageSize = lpPeHeaders->OptionalHeader->SizeOfImage;
+    peImage.EntryPoint = lpPeHeaders->OptionalHeader.AddressOfEntryPoint;
+    peImage.ImageBase = lpPeHeaders->OptionalHeader.ImageBase;
+    peImage.ImageSize = lpPeHeaders->OptionalHeader.SizeOfImage;
 
     *Image = peImage;
 

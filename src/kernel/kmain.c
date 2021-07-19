@@ -1,4 +1,4 @@
-#include "kmain.h"
+#include "kernel/kmain.h"
 
 EFI_STATUS KeBootRenderRect(P_KE_GOP_INFO lpGopInfo, P_KE_RECT lpRect)
 {
@@ -39,7 +39,7 @@ EFI_STATUS KeBootClearScreen(P_KE_GOP_INFO lpGopInfo, UINT32 color)
 
 EFI_STATUS KeMain(P_KE_BOOTLOADER_INFO BootloaderInfo)
 {
-    KeBootClearScreen(&(BootloaderInfo->gopInfo), 0xFF0000);
+    KeBootClearScreen(BootloaderInfo->lpGopInfo, 0xFF0000);
 
     return EFI_SUCCESS;
 }
