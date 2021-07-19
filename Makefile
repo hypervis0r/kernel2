@@ -1,37 +1,12 @@
-GNUEFI := ./gnuefi
-
-LIBDIR := -L./lib/
-LIBDIR += -L$(GNUEFI)
-
-LIBS := -lgnuefi
-LIBS += -lefi
-
-INCLUDEFLAGS := -Ilib/include/
-INCLUDEFLAGS += -Iinclude/
-
-LINKER := x86_64-w64-mingw32-gcc
-LFLAGS := -nostdlib -Wl,-dll -shared -Wl,--subsystem,10 $(LIBDIR) $(LIBS) -e efi_main 
-
-CC := x86_64-w64-mingw32-gcc
-CFLAGS := $(INCLUDEFLAGS) -m64 -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args
-
-CFILES = $(shell find ./src -name '*.c')
-OBJS = $(CFILES:.c=.o)
-DEPS = $(shell find ./include -name '*.h')
-
 OVMF = /usr/share/ovmf/OVMF.fd
 
 export ROOTDIR = $(shell pwd)
 
 .PHONY: all clean run
 
-%.o: %.c $(DEPS)
-	@echo "[+] Building $<"
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-boot.efi: $(OBJS)
+# UEFI Bootloader
+boot.efi:
 	@echo "[+] Building kernel2.efi"
-	#$(LINKER) $(LFLAGS) -o $@ $^
 	make $@ -C ./src/boot
 
 kernel2.img: boot.efi
@@ -46,7 +21,8 @@ all: clean kernel2.img
 	@echo "[+] Build completed"
 
 clean:
-	rm -rf $(OBJS) boot.efi kernel2.img
+	rm -rf boot.efi kernel2.img
+	find . -type f -name '*.o' -delete
 
 run: all
 	qemu-system-x86_64 -serial stdio -cpu qemu64 -bios $(OVMF) -net none kernel2.img
