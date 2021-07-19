@@ -4,7 +4,7 @@ ENTRY(KeMain)
 SECTIONS
 {
     /* We wanna be placed in the higher half */
-    . = 0xC0000000;
+    . = 0x10000000;
  
     /* Then let's place all the other traditional executable sections afterwards. */
     .rodata ALIGN(4K) : {

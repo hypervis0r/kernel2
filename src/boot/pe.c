@@ -21,7 +21,7 @@ UINT32 Rva2Offset(UINT32 dwRva, UINTN uiBaseAddress)
 
 	return NULL;
 }
-
+    
 EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMAGE Image)
 {
     PIMAGE_DOS_HEADER lpDosHeader = NULL; 
@@ -30,6 +30,8 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
     EFI_PHYSICAL_ADDRESS *lpSectionLocation = NULL;
     EFI_ALLOCATE_TYPE allocateType = 0;
     KE_PE_IMAGE peImage = { 0 };
+    UINTN ImageBase = 0;
+
 
     if (!SystemTable || !Buffer)
         return -1;
@@ -64,22 +66,55 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
         return -1;
 
     /*
-        Iterate over every PE section and load it into virtual memory
+        Get first section header
+        We can use this to get every section after
     */
     lpSectionHeader = (PIMAGE_SECTION_HEADER)(lpPeHeaders + 
                                                 sizeof(UINT32) + 
                                                 sizeof(IMAGE_FILE_HEADER) + 
                                                 lpPeHeaders->FileHeader.SizeOfOptionalHeader);
+
+    /*
+        Allocate memory at ImageBase
+    */
+    ImageBase = lpPeHeaders->OptionalHeader.ImageBase;
+    SystemTable->BootServices->AllocatePages(AllocateAddress,
+                                                EfiLoaderData,
+                                                EFI_SIZE_TO_PAGES(lpPeHeaders->OptionalHeader.SizeOfImage),
+                                                &ImageBase);
+
+    /* Copy DOS Header */
+    SystemTable->BootServices->CopyMem(ImageBase, lpDosHeader, sizeof(IMAGE_DOS_HEADER));
+
+    /* Copy PE Headers */
+    SystemTable->BootServices->CopyMem(ImageBase + lpDosHeader->e_lfanew, 
+                                        lpPeHeaders, 
+                                        sizeof(UINT32) + 
+                                            sizeof(IMAGE_FILE_HEADER) + 
+                                            lpPeHeaders->FileHeader.SizeOfOptionalHeader);
+
+    /* Copy Section Headers */
+    SystemTable->BootServices->CopyMem(ImageBase + 
+                                            lpDosHeader->e_lfanew + 
+                                            sizeof(UINT32) + 
+                                            sizeof(IMAGE_FILE_HEADER) + 
+                                            lpPeHeaders->FileHeader.SizeOfOptionalHeader, 
+                                        lpSectionHeader, 
+                                        lpPeHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER));
+
+    /*
+        Iterate over every PE section and load it into virtual memory
+    */
     for (UINT32 i = 0; i < lpPeHeaders->FileHeader.NumberOfSections; i++) 
     {
-        /*if (lpSectionHeader->Characteristics & IMAGE_SCN_CNT_CODE)
+        if (lpSectionHeader->Characteristics & IMAGE_SCN_CNT_CODE)
             allocateType = EfiLoaderCode;
         else
-            allocateType = EfiLoaderData;*/
+            allocateType = EfiLoaderData;
         lpSectionLocation = lpSectionHeader->VirtualAddress;
 
         SystemTable->BootServices->AllocatePages(AllocateAddress,
-                                                EfiLoaderData,
+                                                allocateType,
                                                 EFI_SIZE_TO_PAGES(lpSectionHeader->SizeOfRawData),
                                                 &lpSectionLocation);
 
@@ -90,8 +125,8 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
     
     // TODO: Fix relocations (lets hope this is a later todo and not a soon todo)
     
-    peImage.EntryPoint = lpPeHeaders->OptionalHeader.AddressOfEntryPoint;
-    peImage.ImageBase = lpPeHeaders->OptionalHeader.ImageBase;
+    peImage.EntryPoint = lpPeHeaders->OptionalHeader.AddressOfEntryPoint + ImageBase;
+    peImage.ImageBase = ImageBase;
     peImage.ImageSize = lpPeHeaders->OptionalHeader.SizeOfImage;
 
     *Image = peImage;
@@ -105,7 +140,7 @@ EFI_STATUS KeBootCallPe(P_KE_PE_IMAGE Image, VOID* Parameter)
         return -1;
  
     asm volatile (
-        "mov $0x13371337, %%rax\n\t"
+        "mov %1, %%rax\n\t"
         "mov %0, %%rcx\n\t"
         "jmp %1\n\t"
         : : "r" (Parameter), "r" (Image->EntryPoint) : "rax", "rcx");

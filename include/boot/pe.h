@@ -8,6 +8,8 @@
 #define PE_HEADERS_MAGIC 0x00004550
 #define OPTIONAL_HEADER_AMD64_MAGIC 0x020b
 
+#define IMAGE_SCN_CNT_CODE 0x00000020
+
 typedef struct KE_PE_IMAGE
 {
     VOID* ImageBase;

@@ -39,9 +39,9 @@ EFI_STATUS KeBootClearScreen(P_KE_GOP_INFO lpGopInfo, UINT32 color)
 
 EFI_STATUS KeMain(P_KE_BOOTLOADER_INFO BootloaderInfo)
 {
-    KeBootClearScreen(BootloaderInfo->lpGopInfo, 0xFF0000);
+    //KeBootClearScreen(BootloaderInfo->lpGopInfo, 0xFF0000);
 
-    asm("hlt");
+    asm volatile("hlt");
 
     return EFI_SUCCESS;
 }
