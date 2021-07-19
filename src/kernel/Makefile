@@ -7,7 +7,7 @@ INCLUDEFLAGS := -I$(ROOTDIR)/lib/include/
 INCLUDEFLAGS += -I$(ROOTDIR)/include/
 
 LINKER := x86_64-w64-mingw32-gcc
-LFLAGS := -nostdlib -Wl,-dll -shared -Wl,--subsystem,33 $(LIBDIR) $(LIBS) -e KeMain
+LFLAGS := -T kernel.ld -nostdlib -Wl,-shared -Wl,--subsystem,33  $(LIBDIR) $(LIBS) -e KeMain
 
 CC := x86_64-w64-mingw32-gcc
 CFLAGS := $(INCLUDEFLAGS) -m64 -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args

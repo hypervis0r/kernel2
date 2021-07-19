@@ -41,5 +41,7 @@ EFI_STATUS KeMain(P_KE_BOOTLOADER_INFO BootloaderInfo)
 {
     KeBootClearScreen(BootloaderInfo->lpGopInfo, 0xFF0000);
 
+    asm("hlt");
+
     return EFI_SUCCESS;
 }

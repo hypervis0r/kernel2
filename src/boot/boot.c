@@ -61,7 +61,7 @@ EFI_STATUS KeBootLoadFile(EFI_SYSTEM_TABLE *SystemTable, EFI_HANDLE Image, WCHAR
         return -1;
     }
     
-    status = hFile->GetInfo(hFile, &FileInfoGUID, &fileInfoSize, &fileInfo);
+    status = hFile->GetInfo(hFile, &FileInfoGUID, &fileInfoSize, fileInfo);
     if (EFI_ERROR(status))
     {
         //KeBootPrintDebug(SystemTable, L"[-] Couldn't get file info\n");
@@ -71,7 +71,7 @@ EFI_STATUS KeBootLoadFile(EFI_SYSTEM_TABLE *SystemTable, EFI_HANDLE Image, WCHAR
     // TODO: Dear god
     SystemTable->BootServices->AllocatePool(EfiLoaderData, fileInfoSize, &fileInfo);
 
-    status = hFile->GetInfo(hFile, &FileInfoGUID, &fileInfoSize, &fileInfo);
+    status = hFile->GetInfo(hFile, &FileInfoGUID, &fileInfoSize, fileInfo);
     if (EFI_ERROR(status))
     {
         KeBootPrintDebug(SystemTable, L"[-] Couldn't get file info\n");
@@ -157,13 +157,15 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
         return -1;
     }
 
-    P_KE_PE_IMAGE kernelImage = NULL;
-    Status = KeBootLoadPe(SystemTable, KernelBuffer, kernelImage);
+    KE_PE_IMAGE kernelImage = { 0 };
+    Status = KeBootLoadPe(SystemTable, KernelBuffer, &kernelImage);
     if (EFI_ERROR(Status))
     {
         KeBootPrintDebug(SystemTable, L"[-] Failed to load PE\n");
         return -1;
     }
+    
+    KeBootPrintDebug(SystemTable, L"[+] Loaded kernel into memory\n");
 
     /*
         Get memory map.
@@ -198,8 +200,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     BootloaderInfo.lpGopInfo = &gopInfo;
 
     // TODO: Jump to kernel kek
-    KeBootCallPe(kernelImage, &BootloaderInfo);
-    KeBootSerialWrite(lpSerialProtocol, L"We left the loader, now in kernel (not really)\n", 50);
+    KeBootCallPe(&kernelImage, &BootloaderInfo);
+    KeBootSerialWrite(lpSerialProtocol, L"We left the loader, now in kernel (not really)\n", 100);
+
+    //asm("hlt");
 
     return Status;
 }

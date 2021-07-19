@@ -1,5 +1,27 @@
 #include "boot/pe.h"
 
+UINT32 Rva2Offset(UINT32 dwRva, UINTN uiBaseAddress)
+{
+	UINT16 wIndex = 0;
+	PIMAGE_SECTION_HEADER pSectionHeader = NULL;
+	PIMAGE_PE_HEADERS pNtHeaders = NULL;
+
+	pNtHeaders = (PIMAGE_PE_HEADERS)(uiBaseAddress + ((PIMAGE_DOS_HEADER)uiBaseAddress)->e_lfanew);
+
+	pSectionHeader = (PIMAGE_SECTION_HEADER)((UINTN)(&pNtHeaders->OptionalHeader) + pNtHeaders->FileHeader.SizeOfOptionalHeader);
+
+	if (dwRva < pSectionHeader[0].PointerToRawData)
+		return dwRva;
+
+	for (wIndex = 0; wIndex < pNtHeaders->FileHeader.NumberOfSections; wIndex++)
+	{
+		if (dwRva >= pSectionHeader[wIndex].VirtualAddress && dwRva < (pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].SizeOfRawData))
+			return (dwRva - pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].PointerToRawData);
+	}
+
+	return NULL;
+}
+
 EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMAGE Image)
 {
     PIMAGE_DOS_HEADER lpDosHeader = NULL; 
@@ -9,14 +31,14 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
     EFI_ALLOCATE_TYPE allocateType = 0;
     KE_PE_IMAGE peImage = { 0 };
 
-    if (!SystemTable || !Buffer || !Image)
+    if (!SystemTable || !Buffer)
         return -1;
     
     /*
         First bytes of PE file is DOS Header
     */
     lpDosHeader = (PIMAGE_DOS_HEADER)Buffer;
-
+    
     /*
         Verify `Buffer` is valid PE file
     */
@@ -61,6 +83,8 @@ EFI_STATUS KeBootLoadPe(EFI_SYSTEM_TABLE *SystemTable, VOID* Buffer, P_KE_PE_IMA
                                                 EFI_SIZE_TO_PAGES(lpSectionHeader->SizeOfRawData),
                                                 &lpSectionLocation);
 
+        SystemTable->BootServices->CopyMem(lpSectionLocation, lpSectionHeader->PointerToRawData, lpSectionHeader->SizeOfRawData);
+
         lpSectionHeader += sizeof(IMAGE_SECTION_HEADER);
     }
     
@@ -79,10 +103,12 @@ EFI_STATUS KeBootCallPe(P_KE_PE_IMAGE Image, VOID* Parameter)
 {
     if (!Image)
         return -1;
-    
-    EFI_STATUS (*EntryPoint)(VOID*) = Image->EntryPoint;
+ 
+    asm volatile (
+        "mov $0x13371337, %%rax\n\t"
+        "mov %0, %%rcx\n\t"
+        "jmp %1\n\t"
+        : : "r" (Parameter), "r" (Image->EntryPoint) : "rax", "rcx");
 
-    EFI_STATUS Result = (*EntryPoint)(Parameter);
-
-    return Result;
+    return EFI_SUCCESS;
 }

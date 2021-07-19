@@ -24,8 +24,8 @@ all: clean kernel2.img
 	@echo "[+] Build completed"
 
 clean:
-	rm -rf boot.efi kernel2.img
+	rm -rf boot.efi kernel.exe kernel2.img
 	find . -type f -name '*.o' -delete
 
 run: all
-	qemu-system-x86_64 -serial stdio -cpu qemu64 -bios $(OVMF) -net none kernel2.img
+	qemu-system-x86_64 -serial stdio -cpu qemu64 -bios $(OVMF) -s -net none kernel2.img
