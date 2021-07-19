@@ -6,15 +6,18 @@ export ROOTDIR = $(shell pwd)
 
 # UEFI Bootloader
 boot.efi:
-	@echo "[+] Building kernel2.efi"
 	make $@ -C ./src/boot
 
-kernel2.img: boot.efi
+kernel.exe:
+	make $@ -C ./src/kernel
+
+kernel2.img: boot.efi kernel.exe
 	dd if=/dev/zero of=$@ bs=1k count=1440
 	mformat -i $@ -f 1440 ::
 	mmd -i $@ ::/EFI
 	mmd -i $@ ::/EFI/BOOT
-	mcopy -i $@ $< ::/EFI/BOOT/BOOTX64.efi	
+	mcopy -i $@ $< ::/EFI/BOOT/BOOTX64.efi
+	mcopy -i $@ $> ::/KERNEL.EXE
 	@echo "[+] Built kernel2"
 
 all: clean kernel2.img

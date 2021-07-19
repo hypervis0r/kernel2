@@ -6,4 +6,10 @@
 #include "boot/graphics.h"
 #include "boot/serial.h"
 
+typedef struct KE_BOOTLOADER_INFO
+{
+    EFI_MEMORY_DESCRIPTOR *lpMemoryMap;
+    P_KE_GOP_INFO lpGopInfo;
+} KE_BOOTLOADER_INFO, *P_KE_BOOTLOADER_INFO;
+
 EFI_STATUS KeBootPrintDebug(EFI_SYSTEM_TABLE *SystemTable, WCHAR* buffer);

@@ -18,6 +18,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     UINTN LocalMapKey = 0;
     UINTN DescriptorSize = 0;
     UINT32 DescriptorVersion = 0;
+    KE_BOOTLOADER_INFO BootloaderInfo = { 0 };
 
     KeBootGetSerialProtocol(SystemTable, &lpSerialProtocol);
     KeBootSerialWrite(lpSerialProtocol, L"[+] Serial Hello World\n", 48);
@@ -41,7 +42,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     /*
         Wait for keystroke
     */
-    while ((Status = SystemTable->ConIn->ReadKeyStroke(SystemTable->ConIn, &Key)) == EFI_NOT_READY) ;
+    //while ((Status = SystemTable->ConIn->ReadKeyStroke(SystemTable->ConIn, &Key)) == EFI_NOT_READY) ;
+
+    
 
     /*
         Get memory map.
@@ -72,7 +75,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     */
     Status = SystemTable->BootServices->ExitBootServices(ImageHandle, MemoryMap);
 
+    BootloaderInfo.lpMemoryMap = MemoryMap;
+    BootloaderInfo.lpGopInfo = lpGopInfo;
+
     // TODO: Jump to kernel kek
+    //KernelEntryPoint(&BootloaderInfo);
     KeBootSerialWrite(lpSerialProtocol, L"We left the loader, now in kernel (not really)\n", 50);
 
     return Status;
